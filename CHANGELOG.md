@@ -1,3 +1,60 @@
+## [3.6.1](https://github.com/kevinchappell/formBuilder/compare/v3.6.0...v3.6.1) (2020-08-24)
+
+
+### Bug Fixes
+
+* onAddOption default ([55f4a8f](https://github.com/kevinchappell/formBuilder/commit/55f4a8f273c11641e882a149aaeba782ba1a031d))
+
+# [3.6.0](https://github.com/kevinchappell/formBuilder/compare/v3.5.2...v3.6.0) (2020-08-24)
+
+
+### Features
+
+* custom option attributes ([c072cae](https://github.com/kevinchappell/formBuilder/commit/c072caeb7db83d61faf12c4ee9783e5ae6d28cbf)), closes [#1038](https://github.com/kevinchappell/formBuilder/issues/1038) [#986](https://github.com/kevinchappell/formBuilder/issues/986) [#956](https://github.com/kevinchappell/formBuilder/issues/956)
+
+## [3.5.2](https://github.com/kevinchappell/formBuilder/compare/v3.5.1...v3.5.2) (2020-08-23)
+
+
+### Bug Fixes
+
+* icon name conflict ([1231aae](https://github.com/kevinchappell/formBuilder/commit/1231aae178edad3dad8cdffb753020db3bc6a24c))
+
+## [3.5.1](https://github.com/kevinchappell/formBuilder/compare/v3.5.0...v3.5.1) (2020-08-23)
+
+
+### Bug Fixes
+
+* site home url in /docs ([b73d695](https://github.com/kevinchappell/formBuilder/commit/b73d69553998b0356eb907316c7face77bbd70f4))
+
+# [3.5.0](https://github.com/kevinchappell/formBuilder/compare/v3.4.5...v3.5.0) (2020-08-23)
+
+
+### Features
+
+* onAddOption ([7824e08](https://github.com/kevinchappell/formBuilder/commit/7824e08c657df9b55bf65597b48067965780471a)), closes [#1098](https://github.com/kevinchappell/formBuilder/issues/1098)
+
+## [3.4.5](https://github.com/kevinchappell/formBuilder/compare/v3.4.4...v3.4.5) (2020-08-23)
+
+
+### Bug Fixes
+
+* onSave not called when save called from the api ([d607b02](https://github.com/kevinchappell/formBuilder/commit/d607b02c4001bee160aade80c11cce93451a12d0)), closes [#1058](https://github.com/kevinchappell/formBuilder/issues/1058)
+
+## [3.4.4](https://github.com/kevinchappell/formBuilder/compare/v3.4.3...v3.4.4) (2020-08-22)
+
+
+### Bug Fixes
+
+* checkbox other value ([7e7569e](https://github.com/kevinchappell/formBuilder/commit/7e7569ef770d2adc568b1663c5a5ebb4095cf2c9)), closes [#1061](https://github.com/kevinchappell/formBuilder/issues/1061)
+* timeout memory leaks ([34fa376](https://github.com/kevinchappell/formBuilder/commit/34fa3768979743730d7a558cde66e0cfe188dc91))
+
+## [3.4.3](https://github.com/kevinchappell/formBuilder/compare/v3.4.2...v3.4.3) (2020-08-22)
+
+
+### Bug Fixes
+
+* copy language files from module ([0fee6c3](https://github.com/kevinchappell/formBuilder/commit/0fee6c3fbae0f4ced16ad196494a891f9d140066)), closes [#1068](https://github.com/kevinchappell/formBuilder/issues/1068)
+
 ## [3.4.2](https://github.com/kevinchappell/formBuilder/compare/v3.4.1...v3.4.2) (2020-03-04)
 
 

@@ -24,7 +24,9 @@ import {
   closest,
   safename,
   forceNumber,
+  getContentType
 } from './utils'
+import { css_prefix_text } from '../fonts/config.json'
 
 const DEFAULT_TIMEOUT = 333
 
@@ -229,11 +231,14 @@ const FormBuilder = function(opts, element, $) {
     }
 
     if (isNew) {
-      setTimeout(() => document.dispatchEvent(events.fieldAdded), 10)
+      const eventTimeout = setTimeout(() => {
+        document.dispatchEvent(events.fieldAdded)
+        clearTimeout(eventTimeout)
+      }, 10)
     }
 
-    opts.onAddField(data.lastID, field)
     appendNewField(field, isNew)
+    opts.onAddField(data.lastID, field)
 
     d.stage.classList.remove('empty')
   }
@@ -267,22 +272,18 @@ const FormBuilder = function(opts, element, $) {
    * @return {String} field options markup
    */
   const fieldOptions = function(fieldData) {
-    const { type, values, name } = fieldData
+    const { type, values } = fieldData
     let fieldValues
     const optionActions = [m('a', mi18n.get('addOption'), { className: 'add add-opt' })]
     const fieldOptions = [m('label', mi18n.get('selectOptions'), { className: 'false-label' })]
     const isMultiple = fieldData.multiple || type === 'checkbox-group'
-    const optionDataTemplate = label => {
-      const optionData = {
+    const optionDataTemplate = count => {
+      const label = mi18n.get('optionCount', count)
+      return {
+        selected: false,
         label,
-        value: hyphenCase(label),
+        value: hyphenCase(label)
       }
-
-      if (type !== 'autocomplete') {
-        optionData.selected = false
-      }
-
-      return optionData
     }
 
     if (!values || !values.length) {
@@ -290,7 +291,7 @@ const FormBuilder = function(opts, element, $) {
       if (['checkbox-group', 'checkbox'].includes(type)) {
         defaultOptCount = [1]
       }
-      fieldValues = defaultOptCount.map(index => optionDataTemplate(`${mi18n.get('optionCount', index)}`))
+      fieldValues = defaultOptCount.map(optionDataTemplate)
 
       const firstOption = fieldValues[0]
       if (firstOption.hasOwnProperty('selected') && type !== 'radio-group') {
@@ -304,7 +305,9 @@ const FormBuilder = function(opts, element, $) {
     const optionActionsWrap = m('div', optionActions, { className: 'option-actions' })
     const options = m(
       'ol',
-      fieldValues.map(option => selectFieldOptions(name, option, isMultiple)),
+      fieldValues.map((option, index) => {
+        const optionData = config.opts.onAddOption(option, {type, index, isMultiple})
+        return selectFieldOptions(optionData, isMultiple)}),
       {
         className: 'sortable-options',
       },
@@ -346,6 +349,10 @@ const FormBuilder = function(opts, element, $) {
       number: defaultAttrs.concat(['min', 'max', 'step']),
       select: defaultAttrs.concat(['multiple', 'options']),
       textarea: defaultAttrs.concat(['subtype', 'maxlength', 'rows']),
+    }
+
+    if (type in controls.registeredSubtypes && !(type in typeAttrsMap)) {
+      typeAttrsMap[type] = defaultAttrs.concat(['subtype'])
     }
 
     typeAttrsMap['checkbox-group'] = typeAttrsMap.checkbox
@@ -504,11 +511,10 @@ const FormBuilder = function(opts, element, $) {
 
   /**
    * Detects the type of user defined attribute
-   * @param {String} attr attribute name
    * @param {Object} attrData attribute config
    * @return {String} type of user attr
    */
-  function userAttrType(attr, attrData) {
+  function userAttrType(attrData) {
     return (
       [
         ['array', ({ options }) => !!options],
@@ -532,9 +538,11 @@ const FormBuilder = function(opts, element, $) {
       number: numberAttribute,
       boolean: (attr, attrData) => {
         let isChecked = false
-        if (values.hasOwnProperty(attr)) {
+        if (attr.type === 'checkbox') {
+          isChecked = Boolean(attrData.hasOwnProperty('value') ? attrData.value : false)
+        } else if (values.hasOwnProperty(attr)) {
           isChecked = values[attr]
-        } else if (attrData.hasOwnProperty('value') || attrData.hasOwnProperty('value')) {
+        } else if (attrData.hasOwnProperty('value') || attrData.hasOwnProperty('checked')) {
           isChecked = attrData.value || attrData.checked || false
         }
         return boolAttribute(attr, { ...attrData, [attr]: isChecked }, { first: attrData.label })
@@ -543,7 +551,7 @@ const FormBuilder = function(opts, element, $) {
 
     for (const attribute in typeUserAttr) {
       if (typeUserAttr.hasOwnProperty(attribute)) {
-        const attrValType = userAttrType(attribute, typeUserAttr[attribute])
+        const attrValType = userAttrType(typeUserAttr[attribute])
         const orig = mi18n.get(attribute)
         const tUA = typeUserAttr[attribute]
         const origValue = tUA.value || ''
@@ -869,19 +877,19 @@ const FormBuilder = function(opts, element, $) {
       m('a', null, {
         type: 'remove',
         id: 'del_' + data.lastID,
-        className: 'del-button btn icon-cancel delete-confirm',
+        className: `del-button btn ${css_prefix_text}cancel delete-confirm`,
         title: mi18n.get('removeMessage'),
       }),
       m('a', null, {
         type: 'edit',
         id: data.lastID + '-edit',
-        className: 'toggle-form btn icon-pencil',
+        className: `toggle-form btn ${css_prefix_text}pencil`,
         title: mi18n.get('hide'),
       }),
       m('a', null, {
         type: 'copy',
         id: data.lastID + '-copy',
-        className: 'copy-button btn icon-copy',
+        className: `copy-button btn ${css_prefix_text}copy`,
         title: mi18n.get('copyButtonTooltip'),
       }),
     ]
@@ -938,9 +946,7 @@ const FormBuilder = function(opts, element, $) {
     $li.data('fieldData', { attrs: values })
 
     if (typeof h.stopIndex !== 'undefined') {
-      $('> li', d.stage)
-        .eq(h.stopIndex)
-        .before($li)
+      $('> li', d.stage).eq(h.stopIndex).before($li)
     } else {
       $stage.append($li)
     }
@@ -966,38 +972,40 @@ const FormBuilder = function(opts, element, $) {
   }
 
   // Select field html, since there may be multiple
-  const selectFieldOptions = function(name, optionData, multipleSelect) {
+  const selectFieldOptions = function(optionData, multipleSelect) {
+    const optionTemplate = { selected: false, label: '', value: '' }
     const optionInputType = {
       selected: multipleSelect ? 'checkbox' : 'radio',
     }
-    const optionDataOrder = ['value', 'label', 'selected']
-    const optionInputs = []
-    const optionTemplate = { selected: false, label: '', value: '' }
-
-    optionData = Object.assign(optionTemplate, optionData)
-
-    for (let i = optionDataOrder.length - 1; i >= 0; i--) {
-      const prop = optionDataOrder[i]
-      if (optionData.hasOwnProperty(prop)) {
-        const attrs = {
-          type: optionInputType[prop] || 'text',
-          className: 'option-' + prop,
-          value: optionData[prop],
-          name: name + '-option',
+    const optionInputTypeMap = {
+      boolean: (value, prop) => {
+        const attrs = {value, type: optionInputType[prop] || 'checkbox'}
+        if (value) {
+          attrs.checked  = !!value
         }
-
-        attrs.placeholder = mi18n.get(`placeholder.${prop}`) || ''
-
-        if (prop === 'selected' && optionData.selected === true) {
-          attrs.checked = optionData.selected
-        }
-
-        optionInputs.push(m('input', null, attrs))
-      }
+        return['input', null, attrs]
+      },
+      number: value => ['input', null, {value, type: 'number'}],
+      string: (value, prop) => (['input', null, {value, type: 'text', placeholder: mi18n.get(`placeholder.${prop}`) || ''}]),
+      array: values => ['select', values.map(({label, value}) => m('option', label, {value}))],
+      object: ({tag, content, ...attrs}) => [tag, content, attrs],
     }
 
+    optionData = {...optionTemplate, ...optionData}
+
+    const optionInputs = Object.entries(optionData).map(([prop, val]) => {
+      const optionInputDataType = getContentType(val)
+
+      const [tag, content, attrs] = optionInputTypeMap[optionInputDataType](val, prop)
+      const optionClassName = `option-${prop} option-attr`
+      attrs['data-attr'] = prop
+      attrs.className = attrs.className ? `${attrs.className} ${optionClassName}` : optionClassName
+
+      return m(tag, content, attrs)
+    })
+
     const removeAttrs = {
-      className: 'remove btn icon-cancel',
+      className: `remove btn ${css_prefix_text}cancel`,
       title: mi18n.get('removeMessage'),
     }
     optionInputs.push(m('a', null, removeAttrs))
@@ -1097,9 +1105,7 @@ const FormBuilder = function(opts, element, $) {
     e.stopPropagation()
     e.preventDefault()
     if (e.handled !== true) {
-      const targetID = $(e.target)
-        .parents('.form-field:eq(0)')
-        .attr('id')
+      const targetID = $(e.target).parents('.form-field:eq(0)').attr('id')
       h.toggleEdit(targetID)
       e.handled = true
     } else {
@@ -1115,11 +1121,7 @@ const FormBuilder = function(opts, element, $) {
     e.preventDefault()
     if (e.handled !== true) {
       const targetID =
-        e.target.tagName == 'li'
-          ? $(e.target).attr('id')
-          : $(e.target)
-              .closest('li.form-field')
-              .attr('id')
+        e.target.tagName == 'li' ? $(e.target).attr('id') : $(e.target).closest('li.form-field').attr('id')
       h.toggleEdit(targetID)
       e.handled = true
     }
@@ -1209,9 +1211,7 @@ const FormBuilder = function(opts, element, $) {
   $stage.on('blur', 'input.fld-name', function(e) {
     e.target.value = safename(e.target.value)
     if (e.target.value === '') {
-      $(e.target)
-        .addClass('field-error')
-        .attr('placeholder', mi18n.get('cannotBeEmpty'))
+      $(e.target).addClass('field-error').attr('placeholder', mi18n.get('cannotBeEmpty'))
     } else {
       $(e.target).removeClass('field-error')
     }
@@ -1222,11 +1222,9 @@ const FormBuilder = function(opts, element, $) {
   })
 
   // Copy field
-  $stage.on('click touchstart', '.icon-copy', function(evt) {
+  $stage.on('click touchstart', `.${css_prefix_text}copy`, function(evt) {
     evt.preventDefault()
-    const currentItem = $(evt.target)
-      .parent()
-      .parent('li')
+    const currentItem = $(evt.target).parent().parent('li')
     const $clone = cloneItem(currentItem)
     $clone.insertAfter(currentItem)
     h.updatePreview($clone)
@@ -1244,9 +1242,7 @@ const FormBuilder = function(opts, element, $) {
       pageY: buttonPosition.top - bodyRect.top - 12,
     }
 
-    const deleteID = $(e.target)
-      .parents('.form-field:eq(0)')
-      .attr('id')
+    const deleteID = $(e.target).parents('.form-field:eq(0)').attr('id')
     const $field = $(document.getElementById(deleteID))
 
     document.addEventListener(
@@ -1283,17 +1279,12 @@ const FormBuilder = function(opts, element, $) {
 
   // Attach a callback to toggle required asterisk
   $stage.on('click', '.fld-required', e => {
-    $(e.target)
-      .closest('.form-field')
-      .find('.required-asterisk')
-      .toggle()
+    $(e.target).closest('.form-field').find('.required-asterisk').toggle()
   })
 
   // Attach a callback to toggle roles visibility
   $stage.on('click', 'input.fld-access', function(e) {
-    const roles = $(e.target)
-      .closest('.form-field')
-      .find('.available-roles')
+    const roles = $(e.target).closest('.form-field').find('.available-roles')
     const enableRolesCB = $(e.target)
     roles.slideToggle(250, function() {
       if (!enableRolesCB.is(':checked')) {
@@ -1305,6 +1296,7 @@ const FormBuilder = function(opts, element, $) {
   // Attach a callback to add new options
   $stage.on('click', '.add-opt', function(e) {
     e.preventDefault()
+    const type = $(e.target).closest('.form-field').attr('type')
     const $optionWrap = $(e.target).closest('.field-options')
     const $multiple = $('[name="multiple"]', $optionWrap)
     const $firstOption = $('.option-selected:eq(0)', $optionWrap)
@@ -1316,16 +1308,13 @@ const FormBuilder = function(opts, element, $) {
       isMultiple = $firstOption.attr('type') === 'checkbox'
     }
 
-    const name = $firstOption.attr('name').replace(/-option$/, '')
-
-    $('.sortable-options', $optionWrap).append(selectFieldOptions(name, false, isMultiple))
+    const optionTemplate = { selected: false, label: '', value: '' }
+    const $sortableOptions = $('.sortable-options', $optionWrap)
+    const optionData = config.opts.onAddOption(optionTemplate, {type, index: $sortableOptions.children().length, isMultiple})
+    $sortableOptions.append(selectFieldOptions(optionData, isMultiple))
   })
 
-  $stage.on('mouseover mouseout', '.remove, .del-button', e =>
-    $(e.target)
-      .closest('li')
-      .toggleClass('delete'),
-  )
+  $stage.on('mouseover mouseout', '.remove, .del-button', e => $(e.target).closest('li').toggleClass('delete'))
 
   loadFields()
 
@@ -1342,7 +1331,10 @@ const FormBuilder = function(opts, element, $) {
       activeOnly ? subtract(controls.getRegistered(), opts.disableFields) : controls.getRegistered(),
     clearFields: animate => h.removeAllFields(d.stage, animate),
     showData: h.showData.bind(h),
-    save: h.save.bind(h),
+    save: minify => {
+      h.save(minify)
+      config.opts.onSave(h.getFormData())
+    },
     addField: (field, index) => {
       h.stopIndex = data.formData.length ? index : undefined
       prepFieldVars(field)
@@ -1390,12 +1382,13 @@ const FormBuilder = function(opts, element, $) {
   // set min-height on stage onRender
   d.onRender(d.controls, () => {
     // Ensure style has loaded
-    setTimeout(() => {
+    const onRenderTimeout = setTimeout(() => {
       d.stage.style.minHeight = `${d.controls.clientHeight}px`
       // If option set, controls will remain in view in editor
       if (opts.stickyControls.enable) {
         h.stickyControls($stage)
       }
+      clearTimeout(onRenderTimeout)
     }, 0)
   })
 

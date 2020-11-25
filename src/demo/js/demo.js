@@ -213,6 +213,12 @@ jQuery(function($) {
     onAddField: fieldId => {
       setCurrentFieldIdValues(fieldId)
     },
+    onAddOption: (optionTemplate, {index}) => {
+      optionTemplate.label = optionTemplate.label || `Option ${index + 1}`
+      optionTemplate.value = optionTemplate.value || `option-${index + 1}`
+
+      return optionTemplate
+    },
     onClearAll: () => window.sessionStorage.removeItem('formData'),
     stickyControls: {
       enable: true,
@@ -238,6 +244,7 @@ jQuery(function($) {
         },
       },
     },
+    scrollToFieldOnAdd: false,
   }
   const formData = window.sessionStorage.getItem('formData')
   let editing = true
@@ -288,17 +295,32 @@ jQuery(function($) {
       getJSON: 'Get the current formData in JSON format',
       getJS: 'Get the current formData in JS object format',
       setData: 'set the current formData value for the editor',
+      save: 'call save from the api',
       toggleAllEdit: 'toggle the edit mode for all fields',
       toggleEdit: 'toggle a specific field edit mode by index or id',
       addField: 'programmatically add a field to the template editor',
       removeField: 'remove a field by its index or id from the editor stage',
       resetDemo: 'reset the demo to default state',
     }
+    const demoActions = {
+      loadUserForm: 'Load user form',
+      showUserData: 'Show user form',
+      renderUserForm: 'Render user form',
+      getHTML: 'Get HTML',
+      clearUserForm: 'Clear user form',
+      testSubmit: 'Test Submit',
+    }
 
     const actionApi = document.getElementById('action-api')
     actionApi.appendChild(generateActionTable(actions, columns))
+    const demoApi = document.getElementById('demo-api')
+    demoApi.appendChild(generateActionTable(demoActions, columns))
+
     if (formData && formData !== '[]') {
-      document.getElementById('set-form-data-value').value = window.JSON.stringify(JSON.parse(formData), null, '  ')
+      const setFormDataInputValue = document.getElementById('set-form-data-value')
+      if (setFormDataInputValue) {
+        setFormDataInputValue.value = window.JSON.stringify(JSON.parse(formData), null, '  ')
+      }
     }
 
     langSelect.addEventListener(

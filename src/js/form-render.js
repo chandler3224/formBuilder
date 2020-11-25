@@ -1,5 +1,6 @@
 import mi18n from 'mi18n'
-import utils, { parseXML } from './utils'
+import utils, { parseXML, forEach } from './utils'
+import { remove } from './dom'
 import events from './events'
 import layout from './layout'
 import control from './control'
@@ -226,6 +227,10 @@ class FormRender {
       opts.notify.error(opts.messages.noFormData)
     }
 
+    if (opts.disableInjectedStyle) {
+        const styleTags = document.getElementsByClassName('formBuilder-injected-style')
+        forEach(styleTags, i => remove(styleTags[i]))
+    }
     return formRender
   }
 
@@ -267,7 +272,7 @@ class FormRender {
       .filter(fieldData => fieldData.subtype === 'tinymce')
       .forEach(fieldData => window.tinymce.get(fieldData.name).save())
 
-    this.instanceContainers.forEach((container) => {
+    this.instanceContainers.forEach(container => {
       const userDataMap = $('select, input, textarea', container)
         .serializeArray()
         .reduce((acc, { name, value }) => {
@@ -330,7 +335,7 @@ class FormRender {
   }
 }
 
-;(function() {
+(function() {
   let formRenderForms
   const methods = {
     init: (forms, options = {}) => {

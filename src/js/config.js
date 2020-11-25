@@ -52,6 +52,7 @@ export const defaultOptions = {
     },
   },
   onAddField: (fieldId, fieldData) => fieldData,
+  onAddOption: obj => obj,
   onClearAll: noop,
   onCloseFieldEdit: noop,
   onOpenFieldEdit: noop,
@@ -88,7 +89,7 @@ export const styles = {
 }
 
 export const defaultI18n = {
-  location: 'https://formbuilder.online/assets/lang/',
+  location: 'assets/lang/',
 }
 
 export const config = {}

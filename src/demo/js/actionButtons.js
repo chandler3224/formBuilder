@@ -18,6 +18,9 @@ export const builderActions = {
     window.sessionStorage.setItem('formData', value)
     $('.build-wrap').formBuilder('setData', value)
   },
+  save: () => {
+    $('.build-wrap').formBuilder('save')
+  },
   addField: () => {
     const field = {
       type: 'text',
@@ -58,8 +61,14 @@ export const renderActions = {
           encoding: 'xml',
           menubar: 'edit insert format table',
           plugins: 'preview searchreplace autolink link table lists textcolor colorpicker',
-          toolbar:
-            'formatselect | bold italic forecolor backcolor | link | alignleft aligncenter alignright alignjustify  | numlist bullist outdent indent  | preview',
+          toolbar: [
+            'formatselect',
+            'bold italic forecolor backcolor',
+            'link',
+            'alignleft aligncenter alignright alignjustify',
+            'numlist bullist outdent indent',
+            'preview'
+          ].join(' | ')
         },
       },
       formData:
@@ -85,10 +94,14 @@ export const renderActions = {
 
 export const demoActions = {
   testSubmit: () => {
-    const formData = new FormData(document.forms[0])
-    console.log('Can submit: ', document.forms[0].checkValidity())
+    const form = document.querySelector('.render-wrap')
+    const formData = new FormData(form)
+    console.log('Can submit: ', form.checkValidity())
     // Display the key/value pairs
-    console.log('FormData:', formData)
+    console.log('FormData:')
+    for (var pair of formData.entries()) {
+      console.log(`${pair[0]}: ${pair[1]}`)
+    }
   },
   resetDemo: () => {
     window.sessionStorage.removeItem('formData')

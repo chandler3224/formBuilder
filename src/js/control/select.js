@@ -1,4 +1,5 @@
 import control from '../control'
+import { trimObj } from '../utils'
 
 /**
  * Text input class
@@ -44,7 +45,7 @@ export default class controlSelect extends control {
           this.markup('option', placeholder, {
             disabled: null,
             selected: null,
-          })
+          }),
         )
       }
 
@@ -118,6 +119,7 @@ export default class controlSelect extends control {
               const otherInput = evt.target
               const other = otherInput.parentElement.previousElementSibling
               other.value = otherInput.value
+              other.name = `${data.id}[]`
             },
           },
           id: `${otherOptionAttrs.id}-value`,
@@ -133,7 +135,7 @@ export default class controlSelect extends control {
 
     // build & return the DOM elements
     if (type == 'select') {
-      this.dom = this.markup(optionType, options, data)
+      this.dom = this.markup(optionType, options, trimObj(data, true))
     } else {
       this.dom = this.markup('div', options, { className: type })
     }
@@ -154,7 +156,7 @@ export default class controlSelect extends control {
       }
     }
     const toggleRequired = (checkboxes, isValid) => {
-      ;[].forEach.call(checkboxes, cb => {
+      [].forEach.call(checkboxes, cb => {
         if (isValid) {
           cb.removeAttribute('required')
         } else {
@@ -193,7 +195,6 @@ export default class controlSelect extends control {
             return
           }
 
-          // let foundMatch = false
           for (let i = 0; i < selectedOptions.length; i++) {
             if (input.value === selectedOptions[i]) {
               input.setAttribute('checked', true)
